@@ -1549,23 +1549,959 @@
             <!-- ============================================================
             MAP VIEW
             ============================================================ -->
-            <section id="map" class="page">
-                <div style="background:var(--bg-card);border-radius:var(--radius);padding:20px;border:2px solid var(--border);min-height:250px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;position:relative;overflow:hidden;">
-                    <div style="font-size:48px;color:var(--primary-light);opacity:0.5;"><i class="fas fa-map"></i></div>
-                    <div style="font-size:13px;color:var(--text-light);font-weight:600;"> Map View</div>
-                    <div style="font-size:10px;color:var(--text-light);opacity:0.6;">Google Satellite | OpenStreetMap</div>
-                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;z-index:1;">
-                        <button class="btn-primary"><i class="fas fa-search-plus"></i> Zoom In</button>
-                        <button class="btn-secondary"><i class="fas fa-search-minus"></i> Zoom Out</button>
-                        <button class="btn-success"><i class="fas fa-arrows-alt"></i> Measure</button>
-                        <button class="btn-warning"><i class="fas fa-map-pin"></i> Select</button>
-                    </div>
-                    <div style="margin-top:8px;font-size:10px;color:var(--text-light);z-index:1;">
-                         <span id="mapCoords">--</span> | Scale: 1:1000
-                    </div>
-                </div>
-            </section>
+            <<!-- ============================================================
+MAP VIEW - Tog Wajale Area
+============================================================ -->
+<section id="map" class="page">
+    <div style="background:var(--bg-card);border-radius:var(--radius);padding:16px;border:2px solid var(--border);">
+        
+        <!-- Map Header -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+            <h3 style="font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;">
+                <i class="fas fa-map" style="color:#34D399;"></i> 
+                Tog Wajale - Structural Map
+                <span style="font-size:9px;font-weight:400;color:var(--text-light);">| Scale: 1:10,000</span>
+            </h3>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button class="btn-primary" id="mapZoomIn"><i class="fas fa-search-plus"></i></button>
+                <button class="btn-secondary" id="mapZoomOut"><i class="fas fa-search-minus"></i></button>
+                <button class="btn-success" id="mapReset"><i class="fas fa-home"></i></button>
+                <button class="btn-warning" id="mapFullscreen"><i class="fas fa-expand"></i></button>
+            </div>
+        </div>
 
+        <!-- Map Container -->
+        <div style="position:relative;background:linear-gradient(135deg,#1a2a3a,#2a3a4a);border-radius:var(--radius-sm);overflow:hidden;border:2px solid var(--border);min-height:450px;max-height:600px;" id="mapContainer">
+            
+            <!-- Map Canvas -->
+            <canvas id="mapCanvas" style="width:100%;height:100%;display:block;cursor:grab;"></canvas>
+            
+            <!-- Map Overlay Controls -->
+            <div style="position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:4px;z-index:10;">
+                <button class="bt-btn primary" onclick="toggleLayer('roads')" style="font-size:8px;padding:3px 8px;">
+                    <i class="fas fa-road"></i> Roads
+                </button>
+                <button class="bt-btn success" onclick="toggleLayer('buildings')" style="font-size:8px;padding:3px 8px;">
+                    <i class="fas fa-building"></i> Buildings
+                </button>
+                <button class="bt-btn warning" onclick="toggleLayer('grid')" style="font-size:8px;padding:3px 8px;">
+                    <i class="fas fa-th"></i> Grid
+                </button>
+                <button class="bt-btn secondary" onclick="toggleLayer('labels')" style="font-size:8px;padding:3px 8px;">
+                    <i class="fas fa-tag"></i> Labels
+                </button>
+            </div>
+
+            <!-- Scale Bar -->
+            <div style="position:absolute;bottom:20px;left:20px;z-index:10;background:rgba(0,0,0,0.6);padding:4px 10px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:80px;height:3px;background:linear-gradient(to right,#34D399,#34D399 25%,#fff 25%,#fff 50%,#34D399 50%,#34D399 75%,#fff 75%,#fff 100%);"></div>
+                    <span style="color:#fff;font-size:9px;font-weight:600;">0    500    1000 m</span>
+                </div>
+            </div>
+
+            <!-- Coordinates Display -->
+            <div style="position:absolute;bottom:20px;right:20px;z-index:10;background:rgba(0,0,0,0.6);padding:4px 10px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);text-align:right;">
+                <div style="color:#34D399;font-size:10px;font-family:monospace;" id="mapCoordsDisplay">
+                    E: 450,123.456 m
+                </div>
+                <div style="color:#F472B6;font-size:10px;font-family:monospace;" id="mapCoordsDisplay2">
+                    N: 1,035,876.789 m
+                </div>
+            </div>
+
+            <!-- Compass Rose -->
+            <div style="position:absolute;top:20px;left:20px;z-index:10;background:rgba(0,0,0,0.5);border-radius:50%;padding:8px;border:2px solid rgba(255,255,255,0.2);width:50px;height:50px;display:flex;align-items:center;justify-content:center;">
+                <div style="position:relative;width:100%;height:100%;">
+                    <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);color:#EF4444;font-size:12px;font-weight:800;">N</div>
+                    <div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);color:#94A3B8;font-size:9px;font-weight:600;">S</div>
+                    <div style="position:absolute;top:50%;left:0;transform:translateY(-50%);color:#94A3B8;font-size:9px;font-weight:600;">W</div>
+                    <div style="position:absolute;top:50%;right:0;transform:translateY(-50%);color:#94A3B8;font-size:9px;font-weight:600;">E</div>
+                    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:2px;height:2px;background:#fff;border-radius:50%;"></div>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div style="position:absolute;top:20px;right:80px;z-index:10;background:rgba(0,0,0,0.6);padding:8px 12px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);font-size:9px;">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+                    <span style="display:inline-block;width:12px;height:3px;background:#F472B6;"></span>
+                    <span style="color:#fff;">Primary Road</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+                    <span style="display:inline-block;width:12px;height:2px;background:#FBBF24;"></span>
+                    <span style="color:#fff;">Secondary Road</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+                    <span style="display:inline-block;width:10px;height:10px;background:#8B5CF6;border-radius:2px;"></span>
+                    <span style="color:#fff;">Buildings</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+                    <span style="display:inline-block;width:10px;height:10px;background:#34D399;border-radius:2px;"></span>
+                    <span style="color:#fff;">Green Zone</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="display:inline-block;width:10px;height:10px;background:#F59E0B;border-radius:2px;"></span>
+                    <span style="color:#fff;">Commercial Zone</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Controls Bottom -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+            <button class="btn-primary" onclick="addSurveyPoint()"><i class="fas fa-map-pin"></i> Add Point</button>
+            <button class="btn-success" onclick="measureOnMap()"><i class="fas fa-ruler"></i> Measure</button>
+            <button class="btn-warning" onclick="clearMapPoints()"><i class="fas fa-eraser"></i> Clear Points</button>
+            <button class="btn-secondary" onclick="exportMapImage()"><i class="fas fa-download"></i> Export Image</button>
+            <span style="font-size:10px;color:var(--text-light);display:flex;align-items:center;margin-left:auto;">
+                <i class="fas fa-circle" style="color:#34D399;font-size:8px;margin-right:4px;"></i>
+                <span id="mapStatus">Ready</span>
+            </span>
+        </div>
+    </div>
+
+    <!-- Map Data Table -->
+    <div style="margin-top:12px;background:var(--bg-card);border-radius:var(--radius);padding:14px;border:2px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+            <h4 style="font-size:12px;font-weight:700;"><i class="fas fa-table" style="color:#F472B6;"></i> Map Features</h4>
+            <span style="font-size:9px;color:var(--text-light);">Click on map to select features</span>
+        </div>
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:10px;">
+                <thead>
+                    <tr style="border-bottom:2px solid var(--border);">
+                        <th style="text-align:left;padding:4px 6px;font-weight:700;">Feature</th>
+                        <th style="text-align:left;padding:4px 6px;font-weight:700;">Type</th>
+                        <th style="text-align:right;padding:4px 6px;font-weight:700;">Easting (m)</th>
+                        <th style="text-align:right;padding:4px 6px;font-weight:700;">Northing (m)</th>
+                        <th style="text-align:right;padding:4px 6px;font-weight:700;">Elevation (m)</th>
+                    </tr>
+                </thead>
+                <tbody id="mapFeatureTable">
+                    <tr>
+                        <td colspan="5" style="text-align:center;padding:12px 0;color:var(--text-light);">
+                            <i class="fas fa-info-circle"></i> Click on map to add features
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- Map JavaScript -->
+<script>
+    // ================================================================
+    // MAP ENGINE - Tog Wajale Structural Map
+    // ================================================================
+
+    const MapEngine = {
+        canvas: null,
+        ctx: null,
+        container: null,
+        scale: 1,
+        offsetX: 0,
+        offsetY: 0,
+        isDragging: false,
+        startX: 0,
+        startY: 0,
+        lastX: 0,
+        lastY: 0,
+        features: [],
+        selectedFeature: null,
+        layers: {
+            roads: true,
+            buildings: true,
+            grid: true,
+            labels: true
+        },
+        points: [],
+        isMeasuring: false,
+        measurePoints: [],
+
+        // Tog Wajale Map Data (Names Removed)
+        mapData: {
+            // Roads - [x1, y1, x2, y2, type, name]
+            roads: [
+                // Primary Roads (Red/Pink)
+                [100, 450, 900, 450, 'primary', ''],
+                [500, 100, 500, 800, 'primary', ''],
+                [100, 300, 900, 300, 'secondary', ''],
+                [300, 100, 300, 800, 'secondary', ''],
+                [100, 600, 900, 600, 'secondary', ''],
+                [700, 100, 700, 800, 'secondary', ''],
+
+                // Secondary Roads (Yellow)
+                [150, 200, 450, 450, 'secondary', ''],
+                [550, 200, 850, 450, 'secondary', ''],
+                [150, 600, 450, 350, 'secondary', ''],
+                [550, 600, 850, 350, 'secondary', ''],
+                [200, 150, 200, 750, 'secondary', ''],
+                [800, 150, 800, 750, 'secondary', ''],
+            ],
+
+            // Buildings - [x, y, width, height, type, name]
+            buildings: [
+                [200, 200, 60, 40, 'commercial', ''],
+                [350, 200, 80, 50, 'residential', ''],
+                [550, 200, 100, 60, 'commercial', ''],
+                [700, 200, 70, 45, 'residential', ''],
+                [200, 500, 90, 55, 'commercial', ''],
+                [400, 500, 120, 70, 'government', ''],
+                [600, 500, 80, 50, 'residential', ''],
+                [800, 500, 60, 40, 'commercial', ''],
+                [300, 650, 50, 30, 'residential', ''],
+                [500, 650, 70, 45, 'commercial', ''],
+                [700, 650, 55, 35, 'residential', ''],
+                [150, 350, 40, 25, 'residential', ''],
+                [850, 350, 40, 25, 'residential', ''],
+            ],
+
+            // Green Zones - [x, y, width, height]
+            greenZones: [
+                [100, 100, 80, 80],
+                [820, 100, 80, 80],
+                [100, 720, 80, 80],
+                [820, 720, 80, 80],
+                [450, 380, 100, 100],
+            ],
+
+            // Survey Points - [x, y, label]
+            surveyPoints: [
+                [250, 250, 'P001'],
+                [450, 350, 'P002'],
+                [650, 250, 'P003'],
+                [350, 550, 'P004'],
+                [550, 550, 'P005'],
+                [750, 450, 'P006'],
+            ]
+        },
+
+        init() {
+            this.canvas = document.getElementById('mapCanvas');
+            this.ctx = this.canvas.getContext('2d');
+            this.container = document.getElementById('mapContainer');
+
+            this.resize();
+            this.draw();
+
+            // Event listeners
+            this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
+            this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
+            this.canvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
+            this.canvas.addEventListener('wheel', (e) => this.onWheel(e));
+            this.canvas.addEventListener('click', (e) => this.onClick(e));
+
+            // Touch events for mobile
+            this.canvas.addEventListener('touchstart', (e) => this.onTouchStart(e), { passive: false });
+            this.canvas.addEventListener('touchmove', (e) => this.onTouchMove(e), { passive: false });
+            this.canvas.addEventListener('touchend', (e) => this.onTouchEnd(e), { passive: false });
+
+            // Window resize
+            window.addEventListener('resize', () => this.resize());
+
+            // Zoom controls
+            document.getElementById('mapZoomIn').addEventListener('click', () => {
+                this.scale *= 1.2;
+                this.draw();
+            });
+            document.getElementById('mapZoomOut').addEventListener('click', () => {
+                this.scale /= 1.2;
+                if (this.scale < 0.2) this.scale = 0.2;
+                this.draw();
+            });
+            document.getElementById('mapReset').addEventListener('click', () => {
+                this.scale = 1;
+                this.offsetX = 0;
+                this.offsetY = 0;
+                this.draw();
+            });
+            document.getElementById('mapFullscreen').addEventListener('click', () => {
+                if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                } else {
+                    this.container.requestFullscreen();
+                }
+            });
+
+            // Update map status
+            document.getElementById('mapStatus').textContent = 'Ready | Tog Wajale Area';
+
+            // Initial coordinates
+            this.updateCoords(450123.456, 1035876.789);
+        },
+
+        resize() {
+            const rect = this.container.getBoundingClientRect();
+            const width = rect.width - 4;
+            const height = Math.min(rect.height - 4, 550);
+            this.canvas.width = width;
+            this.canvas.height = height;
+            this.canvas.style.width = width + 'px';
+            this.canvas.style.height = height + 'px';
+            this.draw();
+        },
+
+        draw() {
+            const ctx = this.ctx;
+            const w = this.canvas.width;
+            const h = this.canvas.height;
+
+            // Clear with gradient background
+            const grad = ctx.createLinearGradient(0, 0, 0, h);
+            grad.addColorStop(0, '#1a2a3a');
+            grad.addColorStop(1, '#2a3a4a');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, w, h);
+
+            // Save state for transformations
+            ctx.save();
+
+            // Apply zoom and pan
+            const cx = w / 2;
+            const cy = h / 2;
+            ctx.translate(cx + this.offsetX, cy + this.offsetY);
+            ctx.scale(this.scale, this.scale);
+            ctx.translate(-cx, -cy);
+
+            // Draw grid
+            if (this.layers.grid) {
+                this.drawGrid(ctx, w, h);
+            }
+
+            // Draw green zones
+            this.drawGreenZones(ctx);
+
+            // Draw roads
+            if (this.layers.roads) {
+                this.drawRoads(ctx);
+            }
+
+            // Draw buildings
+            if (this.layers.buildings) {
+                this.drawBuildings(ctx);
+            }
+
+            // Draw survey points
+            this.drawSurveyPoints(ctx);
+
+            // Draw labels
+            if (this.layers.labels) {
+                this.drawLabels(ctx);
+            }
+
+            // Draw measure points
+            if (this.isMeasuring && this.measurePoints.length > 0) {
+                this.drawMeasurePoints(ctx);
+            }
+
+            ctx.restore();
+
+            // Draw scale bar (outside transform)
+            this.drawScaleBar(ctx, w, h);
+        },
+
+        drawGrid(ctx, w, h) {
+            const gridSize = 50 * this.scale;
+            const startX = -this.offsetX / this.scale;
+            const startY = -this.offsetY / this.scale;
+
+            ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+            ctx.lineWidth = 0.5;
+
+            for (let x = startX % 50; x < w + 50; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, h);
+                ctx.stroke();
+            }
+
+            for (let y = startY % 50; y < h + 50; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+                ctx.stroke();
+            }
+
+            // Major grid lines (every 200px)
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.lineWidth = 1;
+            for (let x = startX % 200; x < w + 200; x += 200) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, h);
+                ctx.stroke();
+            }
+            for (let y = startY % 200; y < h + 200; y += 200) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+                ctx.stroke();
+            }
+
+            // Border
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(0, 0, w, h);
+        },
+
+        drawGreenZones(ctx) {
+            this.mapData.greenZones.forEach(zone => {
+                const x = zone[0];
+                const y = zone[1];
+                const w = zone[2];
+                const h = zone[3];
+
+                ctx.fillStyle = 'rgba(52, 211, 153, 0.15)';
+                ctx.fillRect(x, y, w, h);
+
+                ctx.strokeStyle = 'rgba(52, 211, 153, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 4]);
+                ctx.strokeRect(x, y, w, h);
+                ctx.setLineDash([]);
+            });
+        },
+
+        drawRoads(ctx) {
+            this.mapData.roads.forEach(road => {
+                const x1 = road[0],
+                    y1 = road[1];
+                const x2 = road[2],
+                    y2 = road[3];
+                const type = road[4];
+
+                const width = type === 'primary' ? 4 : 2;
+                const color = type === 'primary' ? '#F472B6' : '#FBBF24';
+
+                ctx.strokeStyle = color;
+                ctx.lineWidth = width;
+                ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                ctx.shadowBlur = 4;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // Road edge glow
+                if (type === 'primary') {
+                    ctx.strokeStyle = 'rgba(244, 114, 182, 0.2)';
+                    ctx.lineWidth = width + 4;
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+                }
+            });
+        },
+
+        drawBuildings(ctx) {
+            this.mapData.buildings.forEach(building => {
+                const x = building[0],
+                    y = building[1];
+                const w = building[2],
+                    h = building[3];
+                const type = building[4];
+
+                let color;
+                switch (type) {
+                    case 'commercial':
+                        color = '#F59E0B';
+                        break;
+                    case 'residential':
+                        color = '#8B5CF6';
+                        break;
+                    case 'government':
+                        color = '#3B82F6';
+                        break;
+                    default:
+                        color = '#6B7280';
+                }
+
+                // Shadow
+                ctx.shadowColor = 'rgba(0,0,0,0.4)';
+                ctx.shadowBlur = 8;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+
+                ctx.fillStyle = color;
+                ctx.fillRect(x, y, w, h);
+
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+
+                ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, y, w, h);
+
+                // Window pattern
+                ctx.fillStyle = 'rgba(255,255,255,0.05)';
+                for (let wx = x + 10; wx < x + w - 10; wx += 15) {
+                    for (let wy = y + 10; wy < y + h - 10; wy += 15) {
+                        ctx.fillRect(wx, wy, 4, 4);
+                    }
+                }
+            });
+        },
+
+        drawSurveyPoints(ctx) {
+            this.mapData.surveyPoints.forEach(point => {
+                const x = point[0],
+                    y = point[1];
+                const label = point[2];
+
+                // Glow
+                const grad = ctx.createRadialGradient(x, y, 0, x, y, 20);
+                grad.addColorStop(0, 'rgba(52, 211, 153, 0.3)');
+                grad.addColorStop(1, 'rgba(52, 211, 153, 0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(x, y, 20, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Point circle
+                ctx.fillStyle = '#34D399';
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Label
+                ctx.fillStyle = '#fff';
+                ctx.font = '10px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(label, x, y - 14);
+
+                // Small flag
+                ctx.fillStyle = '#34D399';
+                ctx.fillRect(x + 8, y - 14, 12, 2);
+                ctx.fillRect(x + 18, y - 14, 2, 8);
+                ctx.fillStyle = '#F472B6';
+                ctx.beginPath();
+                ctx.moveTo(x + 20, y - 14);
+                ctx.lineTo(x + 26, y - 10);
+                ctx.lineTo(x + 20, y - 6);
+                ctx.fill();
+            });
+
+            // User-added points
+            this.points.forEach((point, index) => {
+                const x = point.x,
+                    y = point.y;
+                ctx.fillStyle = '#EF4444';
+                ctx.beginPath();
+                ctx.arc(x, y, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#fff';
+                ctx.font = '9px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('P' + String(index + 1).padStart(3, '0'), x, y - 12);
+            });
+        },
+
+        drawLabels(ctx) {
+            // Grid coordinates labels
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.font = '8px monospace';
+            ctx.textAlign = 'center';
+
+            const step = 200;
+            const startX = -this.offsetX / this.scale;
+            const startY = -this.offsetY / this.scale;
+
+            for (let x = startX - (startX % step); x < this.canvas.width + step; x += step) {
+                if (x > 0 && x < this.canvas.width) {
+                    const easting = 450000 + (x / this.canvas.width) * 2000;
+                    ctx.fillText(Math.round(easting) + 'm', x, this.canvas.height - 10);
+                }
+            }
+
+            for (let y = startY - (startY % step); y < this.canvas.height + step; y += step) {
+                if (y > 0 && y < this.canvas.height) {
+                    const northing = 1035000 + (y / this.canvas.height) * 2000;
+                    ctx.textAlign = 'right';
+                    ctx.fillText(Math.round(northing) + 'm', 10, y + 3);
+                    ctx.textAlign = 'center';
+                }
+            }
+
+            // Title
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Tog Wajale - Structural Map', this.canvas.width / 2, 25);
+        },
+
+        drawMeasurePoints(ctx) {
+            if (this.measurePoints.length < 2) return;
+
+            ctx.strokeStyle = '#F59E0B';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+
+            this.measurePoints.forEach((p, i) => {
+                if (i === 0) ctx.moveTo(p.x, p.y);
+                else ctx.lineTo(p.x, p.y);
+            });
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw points
+            this.measurePoints.forEach(p => {
+                ctx.fillStyle = '#F59E0B';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#fff';
+                ctx.font = '9px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(p.label || '', p.x, p.y - 12);
+            });
+
+            // Distance label
+            if (this.measurePoints.length >= 2) {
+                const p1 = this.measurePoints[0];
+                const p2 = this.measurePoints[this.measurePoints.length - 1];
+                const dist = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+                const midX = (p1.x + p2.x) / 2;
+                const midY = (p1.y + p2.y) / 2;
+
+                // Convert to meters (approximate)
+                const meters = dist * 2.5;
+
+                ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                const text = 'D: ' + meters.toFixed(1) + 'm';
+                const metrics = ctx.measureText(text);
+                const tw = metrics.width;
+                const th = 14;
+                ctx.fillRect(midX - tw / 2 - 4, midY - th / 2 - 2, tw + 8, th + 4);
+
+                ctx.fillStyle = '#F59E0B';
+                ctx.font = '10px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(text, midX, midY + 4);
+            }
+        },
+
+        drawScaleBar(ctx, w, h) {
+            // Already handled in HTML overlay
+        },
+
+        // ===== INTERACTIONS =====
+
+        onMouseDown(e) {
+            const rect = this.canvas.getBoundingClientRect();
+            this.isDragging = true;
+            this.startX = e.clientX - rect.left;
+            this.startY = e.clientY - rect.top;
+            this.lastX = this.startX;
+            this.lastY = this.startY;
+            this.canvas.style.cursor = 'grabbing';
+        },
+
+        onMouseMove(e) {
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (this.isDragging) {
+                const dx = x - this.lastX;
+                const dy = y - this.lastY;
+                this.offsetX += dx;
+                this.offsetY += dy;
+                this.lastX = x;
+                this.lastY = y;
+                this.draw();
+            }
+
+            // Update coordinates on hover
+            const mapX = (x - this.offsetX / this.scale) / this.scale;
+            const mapY = (y - this.offsetY / this.scale) / this.scale;
+            const easting = 450000 + (mapX / this.canvas.width) * 2000;
+            const northing = 1035000 + (mapY / this.canvas.height) * 2000;
+
+            // Only update if within canvas
+            if (x > 0 && x < this.canvas.width && y > 0 && y < this.canvas.height) {
+                this.updateCoords(easting, northing);
+            }
+        },
+
+        onMouseUp(e) {
+            this.isDragging = false;
+            this.canvas.style.cursor = 'grab';
+        },
+
+        onWheel(e) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            this.scale *= delta;
+            if (this.scale < 0.2) this.scale = 0.2;
+            if (this.scale > 5) this.scale = 5;
+            this.draw();
+        },
+
+        onClick(e) {
+            if (this.isDragging) return;
+
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (this.isMeasuring) {
+                this.measurePoints.push({ x, y, label: 'M' + this.measurePoints.length });
+                this.draw();
+                return;
+            }
+
+            // Find nearest feature
+            let nearest = null;
+            let nearestDist = 30;
+
+            // Check survey points
+            this.mapData.surveyPoints.forEach(point => {
+                const dist = Math.sqrt(Math.pow(point[0] - x, 2) + Math.pow(point[1] - y, 2));
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    nearest = { type: 'survey', data: point, label: point[2] };
+                }
+            });
+
+            // Check buildings
+            this.mapData.buildings.forEach(building => {
+                const cx = building[0] + building[2] / 2;
+                const cy = building[1] + building[3] / 2;
+                const dist = Math.sqrt(Math.pow(cx - x, 2) + Math.pow(cy - y, 2));
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    nearest = { type: 'building', data: building, label: building[4] };
+                }
+            });
+
+            if (nearest) {
+                this.selectedFeature = nearest;
+                this.updateFeatureTable(nearest);
+                document.getElementById('mapStatus').textContent = 'Selected: ' + nearest.label;
+                showNotification('📍 Selected: ' + nearest.label);
+            } else {
+                // Add user point
+                const easting = 450000 + (x / this.canvas.width) * 2000;
+                const northing = 1035000 + (y / this.canvas.height) * 2000;
+                this.points.push({ x, y, easting, northing });
+                this.draw();
+                this.updateFeatureTable({ type: 'user', data: this.points[this.points.length - 1],
+                    label: 'P' + String(this.points.length).padStart(3, '0') });
+                document.getElementById('mapStatus').textContent = 'Point added: P' + String(this.points
+                    .length).padStart(3, '0');
+                showNotification('📍 Point added');
+            }
+        },
+
+        // ===== TOUCH EVENTS =====
+
+        onTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = this.canvas.getBoundingClientRect();
+            this.isDragging = true;
+            this.startX = touch.clientX - rect.left;
+            this.startY = touch.clientY - rect.top;
+            this.lastX = this.startX;
+            this.lastY = this.startY;
+        },
+
+        onTouchMove(e) {
+            e.preventDefault();
+            if (!this.isDragging) return;
+            const touch = e.touches[0];
+            const rect = this.canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+
+            const dx = x - this.lastX;
+            const dy = y - this.lastY;
+            this.offsetX += dx;
+            this.offsetY += dy;
+            this.lastX = x;
+            this.lastY = y;
+            this.draw();
+        },
+
+        onTouchEnd(e) {
+            this.isDragging = false;
+        },
+
+        // ===== UI HELPERS =====
+
+        updateCoords(easting, northing) {
+            document.getElementById('mapCoordsDisplay').textContent =
+                'E: ' + Math.round(easting).toLocaleString() + ' m';
+            document.getElementById('mapCoordsDisplay2').textContent =
+                'N: ' + Math.round(northing).toLocaleString() + ' m';
+        },
+
+        updateFeatureTable(feature) {
+            const tbody = document.getElementById('mapFeatureTable');
+            if (!feature) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align:center;padding:12px 0;color:var(--text-light);">
+                            <i class="fas fa-info-circle"></i> Click on map to add features
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let row = '';
+            if (feature.type === 'survey') {
+                const d = feature.data;
+                const easting = 450000 + (d[0] / this.canvas.width) * 2000;
+                const northing = 1035000 + (d[1] / this.canvas.height) * 2000;
+                row = `
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:4px 6px;"><strong>${feature.label}</strong></td>
+                        <td style="padding:4px 6px;">Survey Point</td>
+                        <td style="text-align:right;padding:4px 6px;">${Math.round(easting)}</td>
+                        <td style="text-align:right;padding:4px 6px;">${Math.round(northing)}</td>
+                        <td style="text-align:right;padding:4px 6px;">1845.2</td>
+                    </tr>
+                `;
+            } else if (feature.type === 'building') {
+                const d = feature.data;
+                const cx = d[0] + d[2] / 2;
+                const cy = d[1] + d[3] / 2;
+                const easting = 450000 + (cx / this.canvas.width) * 2000;
+                const northing = 1035000 + (cy / this.canvas.height) * 2000;
+                row = `
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:4px 6px;"><strong>${feature.label}</strong></td>
+                        <td style="padding:4px 6px;">Building</td>
+                        <td style="text-align:right;padding:4px 6px;">${Math.round(easting)}</td>
+                        <td style="text-align:right;padding:4px 6px;">${Math.round(northing)}</td>
+                        <td style="text-align:right;padding:4px 6px;">1845.5</td>
+                    </tr>
+                `;
+            } else if (feature.type === 'user') {
+                const d = feature.data;
+                row = `
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:4px 6px;"><strong>${feature.label}</strong></td>
+                        <td style="padding:4px 6px;">User Point</td>
+                        <td style="text-align:right;padding:4px 6px;">${Math.round(d.easting)}</td>
+                        <td style="text-align:right;padding:4px 6px;">${Math.round(d.northing)}</td>
+                        <td style="text-align:right;padding:4px 6px;">1845.3</td>
+                    </tr>
+                `;
+            }
+
+            // Add all points
+            let allRows = row;
+            this.points.forEach((p, i) => {
+                if (feature.type === 'user' && this.points.indexOf(p) === this.points.length - 1)
+                    return;
+                allRows += `
+                    <tr style="border-bottom:1px solid var(--border);opacity:0.6;">
+                        <td style="padding:4px 6px;">P${String(i+1).padStart(3,'0')}</td>
+                        <td style="padding:4px 6px;">User Point</td>
+                        <td style="text-align:right;padding:4px 6px;">${Math.round(p.easting)}</td>
+                        <td style="text-align:right;padding:4px 6px;">${Math.round(p.northing)}</td>
+                        <td style="text-align:right;padding:4px 6px;">1845.3</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = allRows;
+        }
+    };
+
+    // ===== GLOBAL FUNCTIONS =====
+
+    function toggleLayer(layer) {
+        MapEngine.layers[layer] = !MapEngine.layers[layer];
+        MapEngine.draw();
+        const status = MapEngine.layers[layer] ? 'ON' : 'OFF';
+        showNotification('🔄 ' + layer.charAt(0).toUpperCase() + layer.slice(1) + ': ' + status);
+    }
+
+    function addSurveyPoint() {
+        MapEngine.isMeasuring = false;
+        const cx = MapEngine.canvas.width / 2;
+        const cy = MapEngine.canvas.height / 2;
+        const easting = 450000 + (cx / MapEngine.canvas.width) * 2000;
+        const northing = 1035000 + (cy / MapEngine.canvas.height) * 2000;
+        MapEngine.points.push({ x: cx, y: cy, easting, northing });
+        MapEngine.draw();
+        MapEngine.updateFeatureTable({
+            type: 'user',
+            data: MapEngine.points[MapEngine.points.length - 1],
+            label: 'P' + String(MapEngine.points.length).padStart(3, '0')
+        });
+        showNotification('📍 Point added at center');
+    }
+
+    function measureOnMap() {
+        MapEngine.isMeasuring = !MapEngine.isMeasuring;
+        if (MapEngine.isMeasuring) {
+            MapEngine.measurePoints = [];
+            MapEngine.canvas.style.cursor = 'crosshair';
+            showNotification('📏 Click on map to measure distance');
+            document.getElementById('mapStatus').textContent = 'Measuring... click points';
+        } else {
+            MapEngine.canvas.style.cursor = 'grab';
+            document.getElementById('mapStatus').textContent = 'Measurement complete';
+            showNotification('📏 Measurement complete');
+        }
+    }
+
+    function clearMapPoints() {
+        MapEngine.points = [];
+        MapEngine.measurePoints = [];
+        MapEngine.isMeasuring = false;
+        MapEngine.selectedFeature = null;
+        MapEngine.canvas.style.cursor = 'grab';
+        MapEngine.draw();
+        MapEngine.updateFeatureTable(null);
+        document.getElementById('mapStatus').textContent = 'Cleared';
+        showNotification('🗑️ Points cleared');
+    }
+
+    function exportMapImage() {
+        const canvas = MapEngine.canvas;
+        const link = document.createElement('a');
+        link.download = 'Tog_Wajale_Map.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        showNotification('📥 Map image downloaded');
+    }
+
+    // ================================================================
+    // INIT MAP
+    // ================================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(() => {
+            MapEngine.init();
+        }, 100);
+    });
+
+    // Expose to window
+    window.MapEngine = MapEngine;
+    window.toggleLayer = toggleLayer;
+    window.addSurveyPoint = addSurveyPoint;
+    window.measureOnMap = measureOnMap;
+    window.clearMapPoints = clearMapPoints;
+    window.exportMapImage = exportMapImage;
+
+    console.log('🗺️ Tog Wajale Structural Map loaded');
+</script>
             <!-- ============================================================
             COGO
             ============================================================ -->
@@ -2742,4 +3678,4 @@
     </script>
 
 </body>
-</html>
+    </html>
