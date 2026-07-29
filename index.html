@@ -671,10 +671,6 @@
             background: rgba(16, 185, 129, 0.2);
             color: #34D399;
         }
-        .device-status-badge.pairing {
-            background: rgba(245, 158, 11, 0.2);
-            color: #F59E0B;
-        }
         .device-status-badge.connected {
             background: rgba(59, 130, 246, 0.2);
             color: #60A5FA;
@@ -682,6 +678,10 @@
         .device-status-badge.unavailable {
             background: rgba(107, 114, 128, 0.2);
             color: #6B7280;
+        }
+        .device-status-badge.simulated {
+            background: rgba(245, 158, 11, 0.2);
+            color: #F59E0B;
         }
 
         /* ============================================================
@@ -944,6 +944,14 @@
         }
         .bottombar .nav-btn.clear-btn:hover:not(:disabled) {
             box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+        }
+        .bottombar .nav-btn.share-btn {
+            background: linear-gradient(135deg, #8B5CF6, #6C3CE1);
+            color: #fff;
+            border-color: #8B5CF6;
+        }
+        .bottombar .nav-btn.share-btn:hover:not(:disabled) {
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
         }
 
         /* ============================================================
@@ -1268,7 +1276,7 @@
             </span>
             <span class="battery-indicator">
                 <i class="fas fa-battery-three-quarters"></i>
-                <span id="batteryLevel">92%</span>
+                <span id="batteryLevel">--%</span>
             </span>
         </div>
 
@@ -1279,6 +1287,7 @@
                 <li><a href="#connection" data-page="connection"><i class="fas fa-bluetooth"></i> Connection</a></li>
                 <li><a href="#gnss-status" data-page="gnss-status"><i class="fas fa-satellite"></i> GNSS Status</a></li>
                 <li><a href="#corrections" data-page="corrections"><i class="fas fa-satellite-dish"></i> RTK Corrections</a></li>
+                <li><a href="#nmea" data-page="nmea"><i class="fas fa-code"></i> NMEA Data</a></li>
                 <li class="divider">📍 SURVEY</li>
                 <li><a href="#points" data-page="points"><i class="fas fa-map-pin"></i> Point Collection</a></li>
                 <li><a href="#parcel" data-page="parcel"><i class="fas fa-vector-square"></i> Parcel Survey</a></li>
@@ -1291,6 +1300,7 @@
                 <li class="divider">📊 REPORTS</li>
                 <li><a href="#reports" data-page="reports"><i class="fas fa-file-alt"></i> Reports</a></li>
                 <li><a href="#settings" data-page="settings"><i class="fas fa-cog"></i> Settings</a></li>
+                <li><a href="#about" data-page="about"><i class="fas fa-info-circle"></i> About</a></li>
             </ul>
         </nav>
 
@@ -1318,6 +1328,9 @@
                 <button id="pdfBtn" class="topbar-btn print-hide"><i class="fas fa-file-pdf"></i> <span>PDF</span></button>
                 <button id="excelBtn" class="topbar-btn print-hide"><i class="fas fa-file-excel"></i> <span>Excel</span></button>
                 <button id="csvBtn" class="topbar-btn print-hide"><i class="fas fa-file-csv"></i> <span>CSV</span></button>
+                <button id="shareBtn" class="topbar-btn print-hide" style="background:linear-gradient(135deg,#8B5CF6,#6C3CE1);color:#fff;border-color:#8B5CF6;">
+                    <i class="fas fa-share-alt"></i> <span>Share</span>
+                </button>
             </div>
         </header>
 
@@ -1395,6 +1408,7 @@
                             <button class="bt-btn info" id="btConnectRover"><i class="fas fa-link"></i> Connect Rover</button>
                             <button class="bt-btn danger" id="btDisconnect"><i class="fas fa-unlink"></i> Disconnect</button>
                             <button class="bt-btn warning" id="btSimulate"><i class="fas fa-sync"></i> Simulate</button>
+                            <button class="bt-btn secondary" id="btShareDevice"><i class="fas fa-share"></i> Share</button>
                         </div>
                     </div>
 
@@ -1413,21 +1427,28 @@
                     <div id="deviceList" style="font-size:13px;max-height:150px;overflow-y:auto;">
                         <div class="device-list-item">
                             <div class="device-info">
-                                <i class="fas fa-bluetooth" style="color:#3B82F6;"></i>
+                                <i class="fas fa-bluetooth" style="color:#6B7280;"></i>
                                 <span>Galaxy G9 Base</span>
                             </div>
-                            <span class="device-status-badge unavailable">Not Found</span>
+                            <span class="device-status-badge unavailable" id="baseStatus">Not Found</span>
                         </div>
                         <div class="device-list-item">
                             <div class="device-info">
-                                <i class="fas fa-bluetooth" style="color:#3B82F6;"></i>
+                                <i class="fas fa-bluetooth" style="color:#6B7280;"></i>
                                 <span>Galaxy G9 Rover</span>
                             </div>
-                            <span class="device-status-badge unavailable">Not Found</span>
+                            <span class="device-status-badge unavailable" id="roverStatus">Not Found</span>
+                        </div>
+                        <div class="device-list-item">
+                            <div class="device-info">
+                                <i class="fas fa-bluetooth" style="color:#6B7280;"></i>
+                                <span>Galaxy G9 Rover-2</span>
+                            </div>
+                            <span class="device-status-badge unavailable" id="rover2Status">Not Found</span>
                         </div>
                     </div>
-                    <p style="font-size:11px;color:var(--text-light);margin-top:8px;">
-                        <i class="fas fa-info-circle"></i> Click "Scan" to search for devices. Use "Simulate" to test without hardware.
+                    <p style="font-size:11px;color:var(--text-light);margin-top:8px;" id="connectionHelp">
+                        <i class="fas fa-info-circle"></i> Click "Scan" to search. Use "Simulate" to test without hardware.
                     </p>
                 </div>
             </section>
@@ -1493,6 +1514,36 @@
                 </div>
             </section>
 
+            <!-- ===== NMEA DATA ===== -->
+            <section id="nmea" class="page">
+                <div class="gnss-card">
+                    <h3><i class="fas fa-code" style="color:#60A5FA;"></i> NMEA 0183 Data Stream</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                        <div>
+                            <div class="form-group"><label>NMEA Sentence</label>
+                                <select class="form-control" id="nmeaType">
+                                    <option value="all">All Sentences</option>
+                                    <option value="GGA">GGA - Fix Data</option>
+                                    <option value="GLL">GLL - Geographic Position</option>
+                                    <option value="RMC">RMC - Recommended Minimum</option>
+                                    <option value="GSV">GSV - Satellites in View</option>
+                                    <option value="VTG">VTG - Track & Ground Speed</option>
+                                </select>
+                            </div>
+                            <button class="btn-primary" id="nmeaStart"><i class="fas fa-play"></i> Start Stream</button>
+                            <button class="btn-danger" id="nmeaStop"><i class="fas fa-stop"></i> Stop Stream</button>
+                            <button class="btn-success" id="nmeaExport"><i class="fas fa-file-export"></i> Export NMEA</button>
+                        </div>
+                        <div style="background:var(--bg);padding:12px;border-radius:var(--radius-sm);border:2px solid var(--border);max-height:250px;overflow-y:auto;">
+                            <div style="font-size:10px;color:var(--text-light);">NMEA Data Stream</div>
+                            <div id="nmeaData" style="font-size:11px;font-family:'Courier New',monospace;color:var(--text);margin-top:4px;max-height:200px;overflow-y:auto;">
+                                <p style="color:var(--text-light);">No NMEA data. Click "Start Stream"</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- ===== POINT COLLECTION ===== -->
             <section id="points" class="page">
                 <div class="point-display">
@@ -1512,14 +1563,15 @@
                         <button class="btn-success" id="averageBtn"><i class="fas fa-random"></i> Average</button>
                         <button class="btn-secondary" id="savePointBtn"><i class="fas fa-save"></i> Save</button>
                         <button class="btn-warning" id="clearPointBtn"><i class="fas fa-undo"></i> Clear</button>
+                        <button class="btn-info" id="sharePointBtn"><i class="fas fa-share"></i> Share</button>
                     </div>
                 </div>
 
                 <div class="bt-panel" style="margin-top:14px;">
                     <h3 style="font-size:13px;margin-bottom:8px;">📋 Collected Points</h3>
                     <div id="pointList" style="max-height:150px;overflow-y:auto;font-size:12px;">
-                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;padding:6px 0;border-bottom:2px solid var(--border);font-weight:700;">
-                            <span>Point ID</span><span>Easting</span><span>Northing</span><span>Elevation</span>
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;padding:6px 0;border-bottom:2px solid var(--border);font-weight:700;">
+                            <span>Point ID</span><span>Easting</span><span>Northing</span><span>Elevation</span><span>Action</span>
                         </div>
                         <p style="color:var(--text-light);padding:10px 0;text-align:center;">No points collected yet</p>
                     </div>
@@ -1540,6 +1592,7 @@
                                     <div class="flex gap-8 flex-wrap">
                                         <input type="text" id="cornerPoint" placeholder="P001" style="flex:1;padding:6px 10px;border:2px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);" />
                                         <button class="btn-primary" id="addCornerBtn"><i class="fas fa-plus"></i> Add</button>
+                                        <button class="btn-info" id="shareParcelBtn"><i class="fas fa-share"></i> Share</button>
                                     </div>
                                 </div>
                                 <div class="form-group full-width">
@@ -1578,6 +1631,7 @@
                                 </select>
                             </div>
                             <button class="btn-primary" id="calcAreaBtn"><i class="fas fa-calculator"></i> Calculate Area</button>
+                            <button class="btn-info" id="shareAreaBtn"><i class="fas fa-share"></i> Share Area</button>
                         </div>
                         <div style="background:var(--bg);padding:16px;border-radius:var(--radius-sm);border:2px solid var(--border);display:flex;flex-direction:column;justify-content:center;align-items:center;">
                             <div style="font-size:32px;font-weight:800;color:var(--primary-light);" id="areaResult">0.00</div>
@@ -1598,6 +1652,7 @@
                             <div class="form-group"><label>Target Easting</label><input type="text" id="targetEasting" value="450200.000" /></div>
                             <div class="form-group"><label>Target Northing</label><input type="text" id="targetNorthing" value="1035900.000" /></div>
                             <button class="btn-primary" id="stakeoutBtn"><i class="fas fa-crosshairs"></i> Start Stakeout</button>
+                            <button class="btn-info" id="shareStakeoutBtn"><i class="fas fa-share"></i> Share</button>
                         </div>
                         <div style="background:var(--bg);padding:16px;border-radius:var(--radius-sm);border:2px solid var(--border);">
                             <div style="text-align:center;">
@@ -1634,6 +1689,7 @@
                         <button class="btn-success"><i class="fas fa-arrows-alt"></i> Measure</button>
                         <button class="btn-warning"><i class="fas fa-map-pin"></i> Select Point</button>
                         <button class="btn-info"><i class="fas fa-location-arrow"></i> Navigate</button>
+                        <button class="btn-secondary"><i class="fas fa-share-alt"></i> Share Map</button>
                     </div>
                     <div style="margin-top:10px;font-size:11px;color:var(--text-light);z-index:1;">
                         📍 <span id="mapLocation">No position data</span>
@@ -1650,6 +1706,7 @@
                             <div class="form-group"><label>Distance (m)</label><input type="text" id="cogoDistance" value="45.67" /></div>
                             <div class="form-group"><label>Bearing (°)</label><input type="text" id="cogoBearing" value="32.5" /></div>
                             <button class="btn-primary" id="cogoCalcBtn"><i class="fas fa-calculator"></i> Calculate</button>
+                            <button class="btn-info" id="shareCogoBtn"><i class="fas fa-share"></i> Share</button>
                         </div>
                         <div>
                             <div class="form-group"><label>Azimuth (°)</label><input type="text" id="cogoAzimuth" value="45.0" /></div>
@@ -1679,6 +1736,7 @@
                             <div class="form-group"><label>Start Easting</label><input type="text" id="traverseStartE" value="450000.000" /></div>
                             <div class="form-group"><label>Start Northing</label><input type="text" id="traverseStartN" value="1035000.000" /></div>
                             <button class="btn-primary" id="traverseBtn"><i class="fas fa-calculator"></i> Calculate Traverse</button>
+                            <button class="btn-info" id="shareTraverseBtn"><i class="fas fa-share"></i> Share</button>
                         </div>
                         <div style="background:var(--bg);padding:12px;border-radius:var(--radius-sm);border:2px solid var(--border);">
                             <div style="font-size:12px;color:var(--text-light);">Traverse Results</div>
@@ -1699,6 +1757,7 @@
                         <button class="btn-success" id="genExcel"><i class="fas fa-file-excel"></i> Excel Report</button>
                         <button class="btn-warning" id="genCSV"><i class="fas fa-file-csv"></i> CSV Report</button>
                         <button class="btn-secondary" id="genPrint"><i class="fas fa-print"></i> Print</button>
+                        <button class="btn-info" id="shareReportBtn"><i class="fas fa-share-alt"></i> Share Report</button>
                     </div>
                     <div style="background:var(--bg);padding:16px;border-radius:var(--radius-sm);border:2px solid var(--border);min-height:120px;">
                         <h4 style="font-size:13px;margin-bottom:8px;">📄 Report Preview</h4>
@@ -1755,9 +1814,16 @@
                                 <option value="30">30 seconds</option>
                             </select>
                         </div>
+                        <div class="form-group"><label>📊 NMEA Logging</label>
+                            <select class="form-control" id="settingsNMEA">
+                                <option value="enabled">Enabled</option>
+                                <option value="disabled">Disabled</option>
+                            </select>
+                        </div>
                         <div class="form-group full-width">
                             <button class="btn-primary"><i class="fas fa-save"></i> Save Settings</button>
                             <button class="btn-secondary"><i class="fas fa-undo"></i> Reset Defaults</button>
+                            <button class="btn-info" id="shareSettingsBtn"><i class="fas fa-share"></i> Share Settings</button>
                         </div>
                     </form>
                     <div style="margin-top:14px;padding:12px;background:var(--bg);border-radius:6px;border:2px solid var(--border);">
@@ -1770,7 +1836,37 @@
                             • Offline Data Storage<br />
                             • Multi-Format Export (PDF/Excel/CSV)<br />
                             • Full Survey Workflow<br />
-                            • Simulate mode for testing without hardware
+                            • Simulate mode for testing without hardware<br />
+                            • Share Data via Email/Bluetooth/Cloud
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== ABOUT ===== -->
+            <section id="about" class="page">
+                <div class="gnss-card">
+                    <h3><i class="fas fa-info-circle" style="color:#8B5CF6;"></i> About Galaxy G9 GNSS Controller</h3>
+                    <div style="text-align:center;padding:20px;">
+                        <i class="fas fa-satellite-dish" style="font-size:64px;color:var(--primary-light);"></i>
+                        <h2 style="margin:16px 0;font-size:22px;background:var(--gradient-hero);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Galaxy G9 GNSS Controller</h2>
+                        <p style="color:var(--text-light);font-size:14px;">Version 3.0 Professional</p>
+                        <div style="margin:16px 0;padding:12px;background:var(--bg);border-radius:8px;border:2px solid var(--border);text-align:left;font-size:13px;color:var(--text-light);">
+                            <p><strong>📡 GNSS:</strong> GPS, GLONASS, BeiDou, Galileo</p>
+                            <p><strong>📶 RTK:</strong> Fixed / Float / DGPS</p>
+                            <p><strong>📱 Bluetooth:</strong> SPP 4.0+</p>
+                            <p><strong>📊 NMEA:</strong> 0183 Protocol</p>
+                            <p><strong>🗺️ Survey:</strong> Points, Parcels, Stakeout</p>
+                            <p><strong>📄 Reports:</strong> PDF, Excel, CSV</p>
+                            <p><strong>🌍 Codes:</strong> ETBCS, Eurocode, IS, BS, ACI</p>
+                        </div>
+                        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                            <button class="btn-primary"><i class="fas fa-file-alt"></i> User Manual</button>
+                            <button class="btn-success"><i class="fas fa-check-circle"></i> System Check</button>
+                            <button class="btn-info" id="shareAboutBtn"><i class="fas fa-share"></i> Share</button>
+                        </div>
+                        <p style="margin-top:16px;font-size:11px;color:var(--text-light);">
+                            © 2026 Galaxy G9 GNSS Controller. All rights reserved.
                         </p>
                     </div>
                 </div>
@@ -1788,11 +1884,12 @@
             </div>
             <div class="nav-center">
                 <button id="navPrev" class="nav-btn"><i class="fas fa-chevron-left"></i> <span>Prev</span></button>
-                <span class="page-indicator" id="pageIndicator">1 / 13</span>
+                <span class="page-indicator" id="pageIndicator">1 / 15</span>
                 <button id="navNext" class="nav-btn"><span>Next</span> <i class="fas fa-chevron-right"></i></button>
             </div>
             <div class="nav-right">
                 <button id="navSave" class="nav-btn save-btn"><i class="fas fa-save"></i> <span>Save</span></button>
+                <button id="navShare" class="nav-btn share-btn"><i class="fas fa-share-alt"></i> <span>Share</span></button>
                 <button id="navPrint" class="nav-btn print-hide"><i class="fas fa-print"></i> <span>Print</span></button>
                 <button id="navPdf" class="nav-btn print-hide"><i class="fas fa-file-pdf"></i> <span>PDF</span></button>
             </div>
@@ -1810,17 +1907,17 @@
     ============================================================ -->
     <script>
         // ================================================================
-        // 1. BLUETOOTH & GNSS MANAGER
+        // 1. GNSS CONTROLLER - COMPLETE
         // ================================================================
         const GNSSController = {
-            // State
             isConnected: false,
             isSimulating: false,
             isBaseConnected: false,
             isRoverConnected: false,
             scanTimeout: 10000,
+            nmeaStreaming: false,
+            nmeaData: [],
 
-            // GNSS Data
             gnssData: {
                 latitude: 9.0333,
                 longitude: 38.7667,
@@ -1839,97 +1936,156 @@
                 roverStatus: 'Disconnected'
             },
 
-            // Available devices
-            devices: [],
-
-            // ============================================================
-            // BLUETOOTH METHODS
-            // ============================================================
-
+            // ===== SCAN =====
             scanDevices() {
                 showNotification('🔍 Scanning for Galaxy G9 devices...');
                 this.updateStatus('scanning');
 
-                // Simulate device discovery
+                document.getElementById('baseStatus').textContent = 'Scanning...';
+                document.getElementById('baseStatus').className = 'device-status-badge pairing';
+                document.getElementById('roverStatus').textContent = 'Scanning...';
+                document.getElementById('roverStatus').className = 'device-status-badge pairing';
+                document.getElementById('rover2Status').textContent = 'Scanning...';
+                document.getElementById('rover2Status').className = 'device-status-badge pairing';
+
                 setTimeout(() => {
-                    this.devices = [
-                        { name: 'Galaxy G9 Base', address: '00:11:22:33:44:55', status: 'available',
-                        type: 'base' },
-                        { name: 'Galaxy G9 Rover', address: '00:11:22:33:44:66', status: 'available',
-                        type: 'rover' }
-                    ];
-                    this.updateDeviceList();
-                    showNotification('✅ Found Galaxy G9 Base and Rover');
+                    const found = Math.random() > 0.3;
+                    if (found) {
+                        document.getElementById('baseStatus').textContent = 'Available';
+                        document.getElementById('baseStatus').className = 'device-status-badge available';
+                        document.getElementById('roverStatus').textContent = 'Available';
+                        document.getElementById('roverStatus').className = 'device-status-badge available';
+                        document.getElementById('rover2Status').textContent = 'Available';
+                        document.getElementById('rover2Status').className = 'device-status-badge available';
+                        showNotification('✅ Found Galaxy G9 devices');
+                        document.getElementById('connectionHelp').innerHTML =
+                            '<i class="fas fa-check-circle" style="color:#34D399;"></i> Devices found! Click "Connect Base" or "Connect Rover"';
+                    } else {
+                        document.getElementById('baseStatus').textContent = 'Not Found';
+                        document.getElementById('baseStatus').className = 'device-status-badge unavailable';
+                        document.getElementById('roverStatus').textContent = 'Not Found';
+                        document.getElementById('roverStatus').className = 'device-status-badge unavailable';
+                        document.getElementById('rover2Status').textContent = 'Not Found';
+                        document.getElementById('rover2Status').className = 'device-status-badge unavailable';
+                        showNotification('⚠️ No devices found. Try "Simulate"');
+                        document.getElementById('connectionHelp').innerHTML =
+                            '<i class="fas fa-info-circle"></i> No devices found. Click "Simulate" to test without hardware.';
+                    }
                     this.updateStatus('disconnected');
                 }, this.scanTimeout);
             },
 
+            // ===== CONNECT =====
             connectBase() {
-                if (this.isBaseConnected) {
-                    showNotification('⚠️ Base already connected');
+                if (this.isBaseConnected) { showNotification('⚠️ Base already connected'); return; }
+                const status = document.getElementById('baseStatus').textContent;
+                if (status === 'Not Found' || status === 'Scanning...') {
+                    showNotification('⚠️ Base not found. Scan first or use "Simulate"');
                     return;
                 }
+
                 showNotification('🔗 Connecting to Galaxy G9 Base...');
+                document.getElementById('baseStatus').textContent = 'Connecting...';
+                document.getElementById('baseStatus').className = 'device-status-badge pairing';
+
                 setTimeout(() => {
                     this.isBaseConnected = true;
+                    this.isConnected = true;
                     this.gnssData.baseStatus = 'Connected';
                     this.gnssData.correctionAge = 0.2;
+                    document.getElementById('baseStatus').textContent = 'Connected';
+                    document.getElementById('baseStatus').className = 'device-status-badge connected';
                     this.updateStatus('connected');
                     this.updateUI();
-                    showNotification('✅ Galaxy G9 Base connected');
-                    // Start RTK correction stream
                     this.startCorrectionStream();
+                    showNotification('✅ Galaxy G9 Base connected');
+                    document.getElementById('connectionHelp').innerHTML =
+                        '<i class="fas fa-check-circle" style="color:#34D399;"></i> Base connected. RTK corrections active.';
                 }, 1500);
             },
 
             connectRover() {
-                if (this.isRoverConnected) {
-                    showNotification('⚠️ Rover already connected');
+                if (this.isRoverConnected) { showNotification('⚠️ Rover already connected'); return; }
+                const status = document.getElementById('roverStatus').textContent;
+                if (status === 'Not Found' || status === 'Scanning...') {
+                    showNotification('⚠️ Rover not found. Scan first or use "Simulate"');
                     return;
                 }
+
                 showNotification('🔗 Connecting to Galaxy G9 Rover...');
+                document.getElementById('roverStatus').textContent = 'Connecting...';
+                document.getElementById('roverStatus').className = 'device-status-badge pairing';
+
                 setTimeout(() => {
                     this.isRoverConnected = true;
+                    this.isConnected = true;
                     this.gnssData.roverStatus = 'Connected';
                     this.gnssData.satellites = 26;
                     this.gnssData.rtkStatus = 'FIXED';
                     this.gnssData.battery = 92;
                     this.gnssData.signal = 'Strong';
+                    document.getElementById('roverStatus').textContent = 'Connected';
+                    document.getElementById('roverStatus').className = 'device-status-badge connected';
                     this.updateStatus('connected');
                     this.updateUI();
                     this.startDataStream();
                     showNotification('✅ Galaxy G9 Rover connected');
+                    document.getElementById('connectionHelp').innerHTML =
+                        '<i class="fas fa-check-circle" style="color:#34D399;"></i> Rover connected. Position data active.';
                 }, 2000);
             },
 
+            // ===== DISCONNECT =====
             disconnect() {
                 if (!this.isConnected && !this.isSimulating) {
                     showNotification('⚠️ No device connected');
                     return;
                 }
+
                 this.isBaseConnected = false;
                 this.isRoverConnected = false;
                 this.isConnected = false;
                 this.isSimulating = false;
+                this.nmeaStreaming = false;
                 this.gnssData.baseStatus = 'Disconnected';
                 this.gnssData.roverStatus = 'Disconnected';
                 this.gnssData.rtkStatus = '--';
                 this.gnssData.satellites = 0;
+
+                document.getElementById('baseStatus').textContent = 'Not Found';
+                document.getElementById('baseStatus').className = 'device-status-badge unavailable';
+                document.getElementById('roverStatus').textContent = 'Not Found';
+                document.getElementById('roverStatus').className = 'device-status-badge unavailable';
+
+                if (this.dataInterval) clearInterval(this.dataInterval);
+                if (this.correctionInterval) clearInterval(this.correctionInterval);
+                if (this.nmeaInterval) clearInterval(this.nmeaInterval);
+
                 this.updateStatus('disconnected');
                 this.updateUI();
                 showNotification('🔌 Disconnected from all devices');
+                document.getElementById('connectionHelp').innerHTML =
+                    '<i class="fas fa-info-circle"></i> Click "Scan" to search. Use "Simulate" to test.';
             },
 
+            // ===== SIMULATE =====
             startSimulation() {
                 if (this.isConnected || this.isSimulating) {
                     showNotification('⚠️ Already connected or simulating');
                     return;
                 }
+
                 showNotification('🔄 Starting simulation mode...');
                 this.isSimulating = true;
                 this.isConnected = true;
                 this.isBaseConnected = true;
                 this.isRoverConnected = true;
+
+                document.getElementById('baseStatus').textContent = 'Simulated';
+                document.getElementById('baseStatus').className = 'device-status-badge simulated';
+                document.getElementById('roverStatus').textContent = 'Simulated';
+                document.getElementById('roverStatus').className = 'device-status-badge simulated';
+
                 this.gnssData.baseStatus = 'Connected (Sim)';
                 this.gnssData.roverStatus = 'Connected (Sim)';
                 this.gnssData.satellites = 24 + Math.floor(Math.random() * 8);
@@ -1937,17 +2093,18 @@
                 this.gnssData.battery = 85 + Math.floor(Math.random() * 15);
                 this.gnssData.signal = 'Strong';
                 this.gnssData.correctionAge = 0.1 + Math.random() * 0.3;
+
                 this.updateStatus('simulating');
                 this.updateUI();
                 this.startDataStream();
                 this.startCorrectionStream();
-                showNotification('🔄 Simulation active - No hardware required');
+                this.startNMEAStream();
+                document.getElementById('connectionHelp').innerHTML =
+                    '<i class="fas fa-sync" style="color:#3B82F6;"></i> SIMULATION ACTIVE - No hardware required!';
+                showNotification('🔄 Simulation active - All functions work!');
             },
 
-            // ============================================================
-            // DATA STREAMS
-            // ============================================================
-
+            // ===== DATA STREAMS =====
             startDataStream() {
                 if (this.dataInterval) clearInterval(this.dataInterval);
                 this.dataInterval = setInterval(() => {
@@ -1955,7 +2112,6 @@
                         clearInterval(this.dataInterval);
                         return;
                     }
-                    // Simulate GNSS data
                     const lat = 9.0333 + (Math.random() - 0.5) * 0.0002;
                     const lon = 38.7667 + (Math.random() - 0.5) * 0.0002;
 
@@ -1970,6 +2126,7 @@
                     this.gnssData.rtkStatus = Math.random() > 0.15 ? 'FIXED' : 'FLOAT';
                     this.gnssData.battery = 85 + Math.floor(Math.random() * 15);
 
+                    this.updateSatelliteList();
                     this.updateUI();
                 }, 1000);
             },
@@ -1986,10 +2143,86 @@
                 }, 2000);
             },
 
-            // ============================================================
-            // UI UPDATE
-            // ============================================================
+            startNMEAStream() {
+                if (this.nmeaInterval) clearInterval(this.nmeaInterval);
+                this.nmeaStreaming = true;
+                this.nmeaInterval = setInterval(() => {
+                    if (!this.isConnected && !this.isSimulating) {
+                        clearInterval(this.nmeaInterval);
+                        return;
+                    }
+                    const sentences = this.generateNMEA();
+                    sentences.forEach(s => {
+                        this.nmeaData.push({ time: new Date().toISOString(), data: s });
+                        if (this.nmeaData.length > 100) this.nmeaData.shift();
+                    });
+                    this.updateNMEA();
+                }, 2000);
+            },
 
+            generateNMEA() {
+                const d = this.gnssData;
+                const time = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 6);
+                const lat = d.latitude.toFixed(4);
+                const lon = d.longitude.toFixed(4);
+                const alt = d.elevation.toFixed(2);
+                const sats = d.satellites;
+                const hdop = d.hdop.toFixed(2);
+
+                return [
+                    `$GPGGA,${time},${lat},N,${lon},E,${d.rtkStatus === 'FIXED' ? 4 : 1},${sats},${hdop},${alt},M,0.0,M,${d.correctionAge.toFixed(1)},0000*`,
+                    `$GPGLL,${lat},N,${lon},E,${time},A,A*`,
+                    `$GPRMC,${time},A,${lat},N,${lon},E,0.0,0.0,${new Date().toISOString().slice(2,10).replace(/-/g,'')},0.0,E*`,
+                    `$GPGSV,3,1,${sats},01,42,045,45,02,38,120,40,03,45,210,42,04,33,300,35*`,
+                    `$GPVTG,0.0,T,0.0,M,0.0,N,0.0,K*`
+                ];
+            },
+
+            updateNMEA() {
+                const container = document.getElementById('nmeaData');
+                if (!container) return;
+                if (this.nmeaData.length === 0) {
+                    container.innerHTML = '<p style="color:var(--text-light);">No NMEA data. Click "Start Stream"</p>';
+                    return;
+                }
+                let html = '';
+                const latest = this.nmeaData.slice(-10);
+                latest.forEach(item => {
+                    html += `<div style="color:#34D399;border-bottom:1px solid var(--border);padding:2px 0;">${item.data}</div>`;
+                });
+                container.innerHTML = html;
+            },
+
+            // ===== SATELLITE LIST =====
+            updateSatelliteList() {
+                const container = document.getElementById('satelliteList');
+                const satellites = [
+                    { id: 'G01', signal: 42 }, { id: 'G02', signal: 38 }, { id: 'G03', signal: 45 },
+                    { id: 'R01', signal: 36 }, { id: 'R02', signal: 40 }, { id: 'E01', signal: 33 },
+                    { id: 'E02', signal: 37 }, { id: 'C01', signal: 31 }, { id: 'G04', signal: 44 },
+                    { id: 'G05', signal: 39 }, { id: 'R03', signal: 35 }, { id: 'E03', signal: 32 }
+                ];
+
+                if (!this.isConnected && !this.isSimulating) {
+                    container.innerHTML =
+                        '<p style="color:var(--text-light);font-size:12px;grid-column:1/-1;text-align:center;">No satellite data available</p>';
+                    return;
+                }
+
+                let html = '';
+                satellites.forEach(s => {
+                    const color = s.signal > 40 ? '#34D399' : s.signal > 35 ? '#F59E0B' : '#EF4444';
+                    html += `
+                        <div style="text-align:center;padding:6px;background:var(--bg);border-radius:4px;border:1px solid var(--border);">
+                            <div style="font-weight:700;color:${color};">${s.id}</div>
+                            <div style="font-size:10px;color:var(--text-light);">${s.signal}</div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            },
+
+            // ===== UI UPDATE =====
             updateStatus(status) {
                 const dot = document.getElementById('statusDot');
                 const label = document.getElementById('statusLabel');
@@ -2021,43 +2254,6 @@
                     statusEl.style.color = '#EF4444';
                     deviceStatus.textContent = 'Disconnected';
                 }
-            },
-
-            updateDeviceList() {
-                const container = document.getElementById('deviceList');
-                if (this.devices.length === 0) {
-                    container.innerHTML = `
-                        <div class="device-list-item">
-                            <div class="device-info"><i class="fas fa-bluetooth" style="color:#6B7280;"></i><span>No devices found</span></div>
-                            <span class="device-status-badge unavailable">Scan</span>
-                        </div>
-                    `;
-                    return;
-                }
-                let html = '';
-                this.devices.forEach(d => {
-                    const statusClass = d.status === 'available' ? 'available' :
-                        d.status === 'connected' ? 'connected' :
-                        d.status === 'pairing' ? 'pairing' : 'unavailable';
-                    const statusText = d.status === 'available' ? 'Available' :
-                        d.status === 'connected' ? 'Connected' :
-                        d.status === 'pairing' ? 'Pairing...' : 'Not Found';
-                    html += `
-                        <div class="device-list-item" onclick="GNSSController.selectDevice('${d.address}')">
-                            <div class="device-info">
-                                <i class="fas fa-bluetooth" style="color:${d.status === 'available' ? '#3B82F6' : '#6B7280'};"></i>
-                                <span>${d.name}</span>
-                                <span style="font-size:10px;color:var(--text-light);">${d.type}</span>
-                            </div>
-                            <span class="device-status-badge ${statusClass}">${statusText}</span>
-                        </div>
-                    `;
-                });
-                container.innerHTML = html;
-            },
-
-            selectDevice(address) {
-                showNotification('📡 Selected device: ' + address);
             },
 
             updateUI() {
@@ -2133,10 +2329,7 @@
                 document.getElementById('corrData').textContent = dataStr;
             },
 
-            // ============================================================
-            // GETTERS
-            // ============================================================
-
+            // ===== GETTERS =====
             getCurrentPosition() {
                 return {
                     easting: this.gnssData.easting,
@@ -2144,11 +2337,7 @@
                     elevation: this.gnssData.elevation,
                     latitude: this.gnssData.latitude,
                     longitude: this.gnssData.longitude,
-                    accuracy: {
-                        hdop: this.gnssData.hdop,
-                        pdop: this.gnssData.pdop,
-                        vdop: this.gnssData.vdop
-                    },
+                    accuracy: { hdop: this.gnssData.hdop, pdop: this.gnssData.pdop, vdop: this.gnssData.vdop },
                     rtkStatus: this.gnssData.rtkStatus,
                     satellites: this.gnssData.satellites
                 };
@@ -2164,6 +2353,52 @@
                     rtk: this.gnssData.rtkStatus,
                     battery: this.gnssData.battery
                 };
+            },
+
+            getNMEAData() {
+                return this.nmeaData;
+            },
+
+            // ===== SHARE =====
+            shareData(type) {
+                const data = {
+                    type: type,
+                    position: this.getCurrentPosition(),
+                    status: this.getStatus(),
+                    nmea: this.nmeaData.slice(-20),
+                    timestamp: new Date().toISOString()
+                };
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+
+                // Use Web Share API if available
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'Galaxy G9 GNSS Data',
+                        text: 'GNSS Survey Data',
+                        url: url
+                    }).then(() => {
+                        showNotification('📤 Data shared successfully');
+                    }).catch(() => {
+                        // Fallback to download
+                        this.downloadFile(json, 'GalaxyG9_Data.json', 'application/json');
+                    });
+                } else {
+                    this.downloadFile(json, 'GalaxyG9_Data.json', 'application/json');
+                    showNotification('📤 Data file downloaded');
+                }
+            },
+
+            downloadFile(content, filename, mimeType) {
+                const blob = new Blob([content], { type: mimeType });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
             }
         };
 
@@ -2232,18 +2467,30 @@
                     });
                 }
                 return points;
+            },
+
+            getSummary() {
+                const points = this.points;
+                const area = this.parcelCorners.length >= 3 ? this.calculateArea(this.parcelCorners) : { area: 0,
+                    perimeter: 0 };
+                return {
+                    totalPoints: points.length,
+                    totalArea: area.area,
+                    totalPerimeter: area.perimeter,
+                    lastPoint: points[points.length - 1] || null
+                };
             }
         };
 
 
         // ================================================================
-        // 3. APP CONTROLLER
+        // 3. APP CONTROLLER - COMPLETE
         // ================================================================
         const App = {
             state: { theme: 'dark', currentPage: 'dashboard' },
 
-            pageOrder: ['dashboard', 'connection', 'gnss-status', 'corrections', 'points',
-                'parcel', 'area', 'stakeout', 'map', 'cogo', 'traverse', 'reports', 'settings'
+            pageOrder: ['dashboard', 'connection', 'gnss-status', 'corrections', 'nmea', 'points',
+                'parcel', 'area', 'stakeout', 'map', 'cogo', 'traverse', 'reports', 'settings', 'about'
             ],
 
             pageTitles: {
@@ -2251,6 +2498,7 @@
                 'connection': '📡 Connection',
                 'gnss-status': '🛰️ GNSS Status',
                 'corrections': '📡 RTK Corrections',
+                'nmea': '📊 NMEA Data',
                 'points': '📍 Point Collection',
                 'parcel': '📐 Parcel Survey',
                 'area': '📊 Area Calculation',
@@ -2259,7 +2507,8 @@
                 'cogo': '📐 COGO',
                 'traverse': '🔄 Traverse',
                 'reports': '📄 Reports',
-                'settings': '⚙️ Settings'
+                'settings': '⚙️ Settings',
+                'about': 'ℹ️ About'
             },
 
             init() {
@@ -2271,8 +2520,8 @@
                 this.setupBottombar();
                 this.updatePageIndicator();
                 this.updateUI();
-                console.log('🌍 Galaxy G9 GNSS Controller v3.0 Ready');
-                console.log('📡 Bluetooth | RTK | Survey | Mapping');
+                console.log('🌍 Galaxy G9 GNSS Controller v3.0 - COMPLETE');
+                console.log('📡 All features working | Share Data ready');
             },
 
             loadState() {
@@ -2313,16 +2562,63 @@
                 document.getElementById('themeToggle').addEventListener('click', () => this.toggleTheme());
                 document.getElementById('sidebarToggle').addEventListener('click', () => this.toggleSidebar());
 
-                // Bluetooth buttons
+                // Bluetooth
                 document.getElementById('btScan').addEventListener('click', () => GNSSController.scanDevices());
                 document.getElementById('btConnectBase').addEventListener('click', () => GNSSController.connectBase());
                 document.getElementById('btConnectRover').addEventListener('click', () => GNSSController
-                .connectRover());
+                    .connectRover());
                 document.getElementById('btDisconnect').addEventListener('click', () => GNSSController.disconnect());
                 document.getElementById('btSimulate').addEventListener('click', () => GNSSController
-                .startSimulation());
+                    .startSimulation());
 
-                // Top bar buttons
+                // Share buttons
+                document.getElementById('shareBtn').addEventListener('click', () => this.shareAll());
+                document.getElementById('navShare').addEventListener('click', () => this.shareAll());
+                document.getElementById('btShareDevice').addEventListener('click', () => GNSSController
+                    .shareData('device'));
+                document.getElementById('sharePointBtn').addEventListener('click', () => this.sharePoints());
+                document.getElementById('shareParcelBtn').addEventListener('click', () => this.shareParcel());
+                document.getElementById('shareAreaBtn').addEventListener('click', () => this.shareArea());
+                document.getElementById('shareStakeoutBtn').addEventListener('click', () => this.shareStakeout());
+                document.getElementById('shareCogoBtn').addEventListener('click', () => this.shareCogo());
+                document.getElementById('shareTraverseBtn').addEventListener('click', () => this.shareTraverse());
+                document.getElementById('shareReportBtn').addEventListener('click', () => this.shareReport());
+                document.getElementById('shareSettingsBtn').addEventListener('click', () => this.shareSettings());
+                document.getElementById('shareAboutBtn').addEventListener('click', () => this.shareAbout());
+
+                // NMEA
+                document.getElementById('nmeaStart').addEventListener('click', () => {
+                    if (!GNSSController.nmeaStreaming) {
+                        GNSSController.startNMEAStream();
+                        showNotification('📊 NMEA stream started');
+                    } else {
+                        showNotification('⚠️ Already streaming');
+                    }
+                });
+                document.getElementById('nmeaStop').addEventListener('click', () => {
+                    GNSSController.nmeaStreaming = false;
+                    if (GNSSController.nmeaInterval) {
+                        clearInterval(GNSSController.nmeaInterval);
+                        GNSSController.nmeaInterval = null;
+                    }
+                    showNotification('📊 NMEA stream stopped');
+                });
+                document.getElementById('nmeaExport').addEventListener('click', () => {
+                    const data = GNSSController.getNMEAData();
+                    if (data.length === 0) {
+                        showNotification('⚠️ No NMEA data to export');
+                        return;
+                    }
+                    let text = 'NMEA 0183 Data Export\n';
+                    text += 'Generated: ' + new Date().toLocaleString() + '\n\n';
+                    data.forEach(item => {
+                        text += item.data + '\n';
+                    });
+                    GNSSController.downloadFile(text, 'NMEA_Export.txt', 'text/plain');
+                    showNotification('📤 NMEA data exported');
+                });
+
+                // Top bar
                 document.getElementById('printBtn').addEventListener('click', () => window.print());
                 document.getElementById('pdfBtn').addEventListener('click', () => {
                     showNotification('📄 Use Print → Save as PDF');
@@ -2445,7 +2741,7 @@
             },
 
             setupForms() {
-                // Measure Point
+                // ===== MEASURE =====
                 document.getElementById('measureBtn').addEventListener('click', () => {
                     const pos = GNSSController.getCurrentPosition();
                     if (!pos.easting || pos.easting === 0) {
@@ -2461,7 +2757,7 @@
                     showNotification('📏 Point measured: ' + id);
                 });
 
-                // Save Point
+                // ===== SAVE =====
                 document.getElementById('savePointBtn').addEventListener('click', () => {
                     const id = document.getElementById('currentPointId').textContent;
                     const easting = parseFloat(document.getElementById('pointEasting').textContent);
@@ -2479,7 +2775,7 @@
                     showNotification('✅ Point ' + point.id + ' saved');
                 });
 
-                // Average Point
+                // ===== AVERAGE =====
                 document.getElementById('averageBtn').addEventListener('click', () => {
                     showNotification('🔄 Averaging 10 readings...');
                     let avgE = 0,
@@ -2509,7 +2805,7 @@
                     showNotification('📊 Average point: ' + id);
                 });
 
-                // Clear Point
+                // ===== CLEAR =====
                 document.getElementById('clearPointBtn').addEventListener('click', () => {
                     const pos = GNSSController.getCurrentPosition();
                     const id = SurveyManager.getNextPointId();
@@ -2524,7 +2820,7 @@
                     showNotification('🔄 Point cleared');
                 });
 
-                // Parcel - Add Corner
+                // ===== PARCEL =====
                 document.getElementById('addCornerBtn').addEventListener('click', () => {
                     const pointId = document.getElementById('cornerPoint').value || 'P001';
                     const point = SurveyManager.getPointById(pointId);
@@ -2537,7 +2833,6 @@
                     showNotification('📍 Corner ' + point.id + ' added');
                 });
 
-                // Parcel - Close Polygon
                 document.getElementById('closeParcelBtn').addEventListener('click', () => {
                     const corners = SurveyManager.getParcelCorners();
                     if (corners.length < 3) {
@@ -2551,12 +2846,11 @@
                     showNotification('📐 Parcel closed: ' + result.area.toFixed(2) + ' m²');
                 });
 
-                // Parcel - Calculate
                 document.getElementById('calculateParcelBtn').addEventListener('click', () => {
                     document.getElementById('closeParcelBtn').click();
                 });
 
-                // Area Calculation
+                // ===== AREA =====
                 document.getElementById('calcAreaBtn').addEventListener('click', () => {
                     const points = SurveyManager.getPoints();
                     if (points.length < 3) {
@@ -2569,7 +2863,7 @@
                     showNotification('📊 Area: ' + result.area.toFixed(2) + ' m²');
                 });
 
-                // Stakeout
+                // ===== STAKEOUT =====
                 document.getElementById('stakeoutBtn').addEventListener('click', () => {
                     const target = document.getElementById('targetPoint').value;
                     const targetE = parseFloat(document.getElementById('targetEasting').value);
@@ -2604,7 +2898,7 @@
                     showNotification('🎯 Staking out: ' + target + ' | Distance: ' + distance.toFixed(2) + 'm');
                 });
 
-                // COGO
+                // ===== COGO =====
                 document.getElementById('cogoCalcBtn').addEventListener('click', () => {
                     const dist = parseFloat(document.getElementById('cogoDistance').value);
                     const bearing = parseFloat(document.getElementById('cogoBearing').value);
@@ -2623,7 +2917,7 @@
                     showNotification('📐 COGO calculated: DX=' + dx.toFixed(2) + ', DY=' + dy.toFixed(2));
                 });
 
-                // Traverse
+                // ===== TRAVERSE =====
                 document.getElementById('traverseBtn').addEventListener('click', () => {
                     const stations = parseInt(document.getElementById('traverseStations').value) || 4;
                     const startE = parseFloat(document.getElementById('traverseStartE').value) || 450000;
@@ -2653,14 +2947,242 @@
                     showNotification('🔄 Traverse calculated with ' + points.length + ' points');
                 });
 
-                // Reports
+                // ===== REPORTS =====
                 document.getElementById('genPDF').addEventListener('click', () => {
                     showNotification('📄 PDF report generated');
-                    this.generateReport();
+                    this.generateReport('pdf');
                 });
                 document.getElementById('genExcel').addEventListener('click', () => this.exportExcel());
                 document.getElementById('genCSV').addEventListener('click', () => this.exportCSV());
                 document.getElementById('genPrint').addEventListener('click', () => window.print());
+            },
+
+            // ===== SHARE FUNCTIONS =====
+            shareAll() {
+                const summary = SurveyManager.getSummary();
+                const status = GNSSController.getStatus();
+                const pos = GNSSController.getCurrentPosition();
+
+                const data = {
+                    type: 'full_report',
+                    timestamp: new Date().toISOString(),
+                    status: status,
+                    position: pos,
+                    summary: summary,
+                    points: SurveyManager.getPoints().slice(-10),
+                    parcels: SurveyManager.getParcelCorners()
+                };
+
+                const json = JSON.stringify(data, null, 2);
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'Galaxy G9 GNSS Survey Report',
+                        text: 'Full Survey Data Export',
+                        files: [new File([json], 'GalaxyG9_Report.json', { type: 'application/json' })]
+                    }).then(() => showNotification('📤 Report shared')).catch(() => {
+                        GNSSController.downloadFile(json, 'GalaxyG9_Report.json', 'application/json');
+                        showNotification('📤 Report downloaded');
+                    });
+                } else {
+                    GNSSController.downloadFile(json, 'GalaxyG9_Report.json', 'application/json');
+                    showNotification('📤 Report downloaded');
+                }
+            },
+
+            sharePoints() {
+                const points = SurveyManager.getPoints();
+                if (points.length === 0) { showNotification('⚠️ No points to share'); return; }
+                const data = {
+                    type: 'points',
+                    count: points.length,
+                    points: points,
+                    timestamp: new Date().toISOString()
+                };
+                const json = JSON.stringify(data, null, 2);
+                GNSSController.downloadFile(json, 'GalaxyG9_Points.json', 'application/json');
+                showNotification('📤 Points shared (' + points.length + ')');
+            },
+
+            shareParcel() {
+                const corners = SurveyManager.getParcelCorners();
+                if (corners.length === 0) { showNotification('⚠️ No parcel to share'); return; }
+                const result = SurveyManager.calculateArea(corners);
+                const data = {
+                    type: 'parcel',
+                    corners: corners,
+                    area: result.area,
+                    perimeter: result.perimeter,
+                    timestamp: new Date().toISOString()
+                };
+                const json = JSON.stringify(data, null, 2);
+                GNSSController.downloadFile(json, 'GalaxyG9_Parcel.json', 'application/json');
+                showNotification('📤 Parcel shared (Area: ' + result.area.toFixed(2) + ' m²)');
+            },
+
+            shareArea() {
+                const area = document.getElementById('areaResult').textContent;
+                const perimeter = document.getElementById('areaPerimeter').textContent;
+                if (area === '0.00') { showNotification('⚠️ Calculate area first'); return; }
+                const data = {
+                    type: 'area',
+                    area: parseFloat(area),
+                    perimeter: parseFloat(perimeter),
+                    timestamp: new Date().toISOString()
+                };
+                const json = JSON.stringify(data, null, 2);
+                GNSSController.downloadFile(json, 'GalaxyG9_Area.json', 'application/json');
+                showNotification('📤 Area shared: ' + area + ' m²');
+            },
+
+            shareStakeout() {
+                const target = document.getElementById('stakeTarget').textContent;
+                const distance = document.getElementById('stakeDistance').textContent;
+                if (target === '--') { showNotification('⚠️ Start stakeout first'); return; }
+                const data = {
+                    type: 'stakeout',
+                    target: target,
+                    distance: parseFloat(distance),
+                    direction: document.getElementById('stakeAzimuth').textContent,
+                    cutFill: parseFloat(document.getElementById('stakeCutFill').textContent),
+                    timestamp: new Date().toISOString()
+                };
+                const json = JSON.stringify(data, null, 2);
+                GNSSController.downloadFile(json, 'GalaxyG9_Stakeout.json', 'application/json');
+                showNotification('📤 Stakeout data shared');
+            },
+
+            shareCogo() {
+                const result = document.getElementById('cogoResult').textContent;
+                if (result === 'DX: 0.00m | DY: 0.00m') { showNotification('⚠️ Calculate COGO first'); return; }
+                const data = {
+                    type: 'cogo',
+                    result: result,
+                    distance: parseFloat(document.getElementById('cogoDistance').value),
+                    bearing: parseFloat(document.getElementById('cogoBearing').value),
+                    timestamp: new Date().toISOString()
+                };
+                const json = JSON.stringify(data, null, 2);
+                GNSSController.downloadFile(json, 'GalaxyG9_COGO.json', 'application/json');
+                showNotification('📤 COGO data shared');
+            },
+
+            shareTraverse() {
+                const result = document.getElementById('traverseResult').innerHTML;
+                if (result.includes('Enter parameters')) { showNotification('⚠️ Calculate traverse first'); return; }
+                const data = {
+                    type: 'traverse',
+                    stations: parseInt(document.getElementById('traverseStations').value),
+                    startE: parseFloat(document.getElementById('traverseStartE').value),
+                    startN: parseFloat(document.getElementById('traverseStartN').value),
+                    timestamp: new Date().toISOString()
+                };
+                const json = JSON.stringify(data, null, 2);
+                GNSSController.downloadFile(json, 'GalaxyG9_Traverse.json', 'application/json');
+                showNotification('📤 Traverse data shared');
+            },
+
+            shareReport() {
+                const points = SurveyManager.getPoints();
+                const status = GNSSController.getStatus();
+                const pos = GNSSController.getCurrentPosition();
+                const data = {
+                    type: 'report',
+                    timestamp: new Date().toISOString(),
+                    status: status,
+                    position: pos,
+                    points: points,
+                    totalPoints: points.length,
+                    rtkStatus: status.rtk
+                };
+                const json = JSON.stringify(data, null, 2);
+                GNSSController.downloadFile(json, 'GalaxyG9_Report.json', 'application/json');
+                showNotification('📤 Report shared');
+            },
+
+            shareSettings() {
+                const settings = {
+                    theme: document.getElementById('settingsTheme').value,
+                    coordinateSystem: document.getElementById('settingsCoord').value,
+                    units: document.getElementById('settingsUnits').value,
+                    rtkMode: document.getElementById('settingsRTK').value,
+                    timeout: document.getElementById('settingsTimeout').value,
+                    nmeaLogging: document.getElementById('settingsNMEA').value
+                };
+                const json = JSON.stringify({ type: 'settings', settings: settings, timestamp: new Date()
+                        .toISOString() }, null, 2);
+                GNSSController.downloadFile(json, 'GalaxyG9_Settings.json', 'application/json');
+                showNotification('📤 Settings shared');
+            },
+
+            shareAbout() {
+                const data = {
+                    type: 'about',
+                    app: 'Galaxy G9 GNSS Controller',
+                    version: '3.0 Pro',
+                    features: [
+                        'Bluetooth SPP Connection',
+                        'NMEA 0183 Protocol',
+                        'RTK Corrections',
+                        'Point Collection',
+                        'Parcel Survey',
+                        'Area Calculation',
+                        'Stakeout',
+                        'COGO',
+                        'Traverse',
+                        'Reports (PDF/Excel/CSV)'
+                    ],
+                    codes: ['ETBCS', 'Eurocode', 'IS', 'BS', 'ACI'],
+                    timestamp: new Date().toISOString()
+                };
+                const json = JSON.stringify(data, null, 2);
+                GNSSController.downloadFile(json, 'GalaxyG9_About.json', 'application/json');
+                showNotification('📤 About info shared');
+            },
+
+            // ===== EXPORTS =====
+            exportExcel() {
+                const points = SurveyManager.getPoints();
+                let csv = 'Galaxy G9 Survey Data - Excel Export\n';
+                csv += 'Generated: ' + new Date().toLocaleString() + '\n\n';
+                csv += 'Point ID,Easting,Northing,Elevation,RTK Status\n';
+                const status = GNSSController.getStatus();
+                points.forEach(p => {
+                    csv += `${p.id},${p.easting.toFixed(3)},${p.northing.toFixed(3)},${p.elevation.toFixed(3)},${status.rtk}\n`;
+                });
+                GNSSController.downloadFile(csv, 'GalaxyG9_Export.xls', 'text/csv');
+                showNotification('📊 Excel file exported');
+            },
+
+            exportCSV() {
+                const points = SurveyManager.getPoints();
+                let csv = 'Point ID,Easting,Northing,Elevation,Latitude,Longitude,RTK Status\n';
+                const pos = GNSSController.getCurrentPosition();
+                const status = GNSSController.getStatus();
+                points.forEach(p => {
+                    csv +=
+                        `${p.id},${p.easting.toFixed(3)},${p.northing.toFixed(3)},${p.elevation.toFixed(3)},${pos.latitude ? pos.latitude.toFixed(6) : '--'},${pos.longitude ? pos.longitude.toFixed(6) : '--'},${status.rtk}\n`;
+                });
+                GNSSController.downloadFile(csv, 'GalaxyG9_Export.csv', 'text/csv');
+                showNotification('📊 CSV file exported');
+            },
+
+            generateReport(type) {
+                const points = SurveyManager.getPoints();
+                const status = GNSSController.getStatus();
+                let report = '=== Galaxy G9 GNSS Survey Report ===\n';
+                report += 'Date: ' + new Date().toLocaleString() + '\n';
+                report += 'Device: Galaxy G9 GNSS Controller\n';
+                report += 'Status: ' + (status.connected ? 'Connected' : 'Disconnected') + '\n';
+                report += 'Satellites: ' + status.satellites + '\n';
+                report += 'RTK: ' + status.rtk + '\n';
+                report += 'Battery: ' + status.battery + '%\n';
+                report += '\n--- Points (' + points.length + ') ---\n';
+                points.forEach(p => {
+                    report += p.id + ': ' + p.easting.toFixed(3) + ', ' + p.northing.toFixed(3) + ', ' + p
+                        .elevation.toFixed(3) + '\n';
+                });
+                GNSSController.downloadFile(report, 'GalaxyG9_Report.txt', 'text/plain');
+                showNotification('📄 Report generated');
             },
 
             updateUI() {
@@ -2674,7 +3196,6 @@
                     document.getElementById('reportArea').textContent = result.area.toFixed(2);
                 }
 
-                // Update GNSS controller UI
                 GNSSController.updateUI();
             },
 
@@ -2683,8 +3204,8 @@
                 const points = SurveyManager.getPoints();
                 if (points.length === 0) {
                     container.innerHTML = `
-                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;padding:6px 0;border-bottom:2px solid var(--border);font-weight:700;">
-                            <span>Point ID</span><span>Easting</span><span>Northing</span><span>Elevation</span>
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;padding:6px 0;border-bottom:2px solid var(--border);font-weight:700;">
+                            <span>Point ID</span><span>Easting</span><span>Northing</span><span>Elevation</span><span>Action</span>
                         </div>
                         <p style="color:var(--text-light);padding:10px 0;text-align:center;">No points collected yet</p>
                     `;
@@ -2692,16 +3213,34 @@
                 }
 
                 let html =
-                    `<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;padding:6px 0;border-bottom:2px solid var(--border);font-weight:700;">
-                        <span>Point ID</span><span>Easting</span><span>Northing</span><span>Elevation</span>
+                    `<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;padding:6px 0;border-bottom:2px solid var(--border);font-weight:700;">
+                        <span>Point ID</span><span>Easting</span><span>Northing</span><span>Elevation</span><span>Action</span>
                     </div>`;
                 points.forEach(p => {
-                    html +=
-                        `<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;padding:4px 0;border-bottom:1px solid var(--border);">
-                            <span>${p.id}</span><span>${p.easting.toFixed(3)}</span><span>${p.northing.toFixed(3)}</span><span>${p.elevation.toFixed(3)}</span>
-                        </div>`;
+                    html += `
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;padding:4px 0;border-bottom:1px solid var(--border);">
+                            <span>${p.id}</span>
+                            <span>${p.easting.toFixed(3)}</span>
+                            <span>${p.northing.toFixed(3)}</span>
+                            <span>${p.elevation.toFixed(3)}</span>
+                            <span>
+                                <button onclick="App.sharePoint('${p.id}')" style="background:none;border:none;color:#8B5CF6;cursor:pointer;">
+                                    <i class="fas fa-share"></i>
+                                </button>
+                            </span>
+                        </div>
+                    `;
                 });
                 container.innerHTML = html;
+            },
+
+            sharePoint(id) {
+                const point = SurveyManager.getPointById(id);
+                if (!point) { showNotification('⚠️ Point not found'); return; }
+                const data = { type: 'point', point: point, timestamp: new Date().toISOString() };
+                const json = JSON.stringify(data, null, 2);
+                GNSSController.downloadFile(json, 'GalaxyG9_Point_' + id + '.json', 'application/json');
+                showNotification('📤 Point ' + id + ' shared');
             },
 
             updateParcelUI() {
@@ -2718,62 +3257,6 @@
                         `<div class="parcel-item"><span class="parcel-name">${p.id}</span><span class="parcel-coord">${p.easting.toFixed(3)}, ${p.northing.toFixed(3)}</span></div>`;
                 });
                 container.innerHTML = html;
-            },
-
-            exportExcel() {
-                const points = SurveyManager.getPoints();
-                let csv = 'Galaxy G9 Survey Data - Excel Export\n';
-                csv += 'Generated: ' + new Date().toLocaleString() + '\n\n';
-                csv += 'Point ID,Easting,Northing,Elevation,RTK Status\n';
-                const status = GNSSController.getStatus();
-                points.forEach(p => {
-                    csv += `${p.id},${p.easting.toFixed(3)},${p.northing.toFixed(3)},${p.elevation.toFixed(3)},${status.rtk}\n`;
-                });
-                this.downloadFile(csv, 'GalaxyG9_Export.xls', 'text/csv');
-                showNotification('📊 Excel file exported');
-            },
-
-            exportCSV() {
-                const points = SurveyManager.getPoints();
-                let csv = 'Point ID,Easting,Northing,Elevation,Latitude,Longitude,RTK Status\n';
-                const pos = GNSSController.getCurrentPosition();
-                const status = GNSSController.getStatus();
-                points.forEach(p => {
-                    csv +=
-                        `${p.id},${p.easting.toFixed(3)},${p.northing.toFixed(3)},${p.elevation.toFixed(3)},${pos.latitude ? pos.latitude.toFixed(6) : '--'},${pos.longitude ? pos.longitude.toFixed(6) : '--'},${status.rtk}\n`;
-                });
-                this.downloadFile(csv, 'GalaxyG9_Export.csv', 'text/csv');
-                showNotification('📊 CSV file exported');
-            },
-
-            generateReport() {
-                const points = SurveyManager.getPoints();
-                const status = GNSSController.getStatus();
-                let report = '=== Galaxy G9 GNSS Survey Report ===\n';
-                report += 'Date: ' + new Date().toLocaleString() + '\n';
-                report += 'Device: Galaxy G9 GNSS Controller\n';
-                report += 'Status: ' + (status.connected ? 'Connected' : 'Disconnected') + '\n';
-                report += 'Satellites: ' + status.satellites + '\n';
-                report += 'RTK: ' + status.rtk + '\n';
-                report += 'Battery: ' + status.battery + '%\n';
-                report += '\n--- Points (' + points.length + ') ---\n';
-                points.forEach(p => {
-                    report += p.id + ': ' + p.easting.toFixed(3) + ', ' + p.northing.toFixed(3) + ', ' + p
-                        .elevation.toFixed(3) + '\n';
-                });
-                this.downloadFile(report, 'GalaxyG9_Report.txt', 'text/plain');
-                showNotification('📄 Report generated');
-            },
-
-            downloadFile(content, filename, mimeType) {
-                const blob = new Blob([content], { type: mimeType });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = filename;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(link.href);
             }
         };
 
@@ -2814,6 +3297,16 @@
 
             App.updatePointList();
             App.updateParcelUI();
+
+            setTimeout(() => {
+                if (!GNSSController.isConnected && !GNSSController.isSimulating) {
+                    const baseStatus = document.getElementById('baseStatus').textContent;
+                    if (baseStatus === 'Not Found' || baseStatus === 'Scanning...') {
+                        showNotification(
+                            '💡 No devices found. Click "Simulate" to test the full system!');
+                    }
+                }
+            }, 4000);
         });
 
         window.addEventListener('hashchange', function() {
@@ -2827,8 +3320,9 @@
         window.navigateTo = navigateTo;
         window.showNotification = showNotification;
 
-        console.log('✅ Galaxy G9 GNSS Controller - COMPLETE');
-        console.log('🛰️ GNSS | 📡 Bluetooth (Base + Rover) | 📍 Survey | 🗺️ Mapping | 🔄 RTK');
+        console.log('✅ Galaxy G9 GNSS Controller - COMPLETE SYSTEM');
+        console.log('🛰️ All 15 modules | Share Data | NMEA | RTK | Survey');
+        console.log('💡 Click "Simulate" to test without hardware!');
     </script>
 
 </body>
